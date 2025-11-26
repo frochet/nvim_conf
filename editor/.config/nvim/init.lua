@@ -128,7 +128,7 @@ vim.keymap.set('n', '<leader>c', '<cmd>w !wl-copy<cr><cr>')
 -- <leader><leader> toggles between buffers
 vim.keymap.set('n', '<leader><leader>', '<c-^>')
 -- <leader>, shows/hides hidden characters
-vim.keymap.set('n', '<leader>,', ':set invlist<cr>')
+vim.keymap.set('n', '<leader>=', ':set invlist<cr>')
 -- always center search results
 vim.keymap.set('n', 'n', 'nzz', { silent = true })
 vim.keymap.set('n', 'N', 'Nzz', { silent = true })
@@ -149,6 +149,61 @@ vim.keymap.set('n', '<leader>m', 'ct_')
 -- F1 is pretty close to Esc, so you probably meant Esc
 vim.keymap.set('', '<F1>', '<Esc>')
 vim.keymap.set('i', '<F1>', '<Esc>')
+-- Keymaps for normal and visual mode
+local opts = { desc = "Move line(s) with wrap" }
+
+-- ChatGPT anwser to support moving up and down lines with <C-Up> and <C-Down>
+--
+-- Move current line or visual selection up/down with wrapping
+local function move_block(direction)
+  local bufnr = vim.api.nvim_get_current_buf()
+  local mode = vim.fn.mode()
+
+  -- Determine the line range
+  local start_line, end_line
+  if mode == "V" or mode == "v" then
+    start_line = vim.fn.getpos("'<")[2]
+    end_line   = vim.fn.getpos("'>")[2]
+  else
+    start_line = vim.api.nvim_win_get_cursor(0)[1]
+    end_line = start_line
+  end
+
+  local total_lines = vim.api.nvim_buf_line_count(bufnr)
+  local block = vim.api.nvim_buf_get_lines(bufnr, start_line - 1, end_line, false)
+
+  -- Remove block from original position
+  vim.api.nvim_buf_set_lines(bufnr, start_line - 1, end_line, false, {})
+
+  -- Compute new insertion point
+  local new_start = start_line + direction
+  local block_height = end_line - start_line
+
+  if new_start < 1 then
+    new_start = total_lines - block_height
+  elseif new_start > total_lines - block_height + 1 then
+    new_start = 1
+  end
+
+  -- Insert the block
+  vim.api.nvim_buf_set_lines(bufnr, new_start - 1, new_start - 1, false, block)
+
+  -- Restore cursor or selection
+  if mode == "V" or mode == "v" then
+    vim.fn.setpos("'<", {0, new_start, 0, 0})
+    vim.fn.setpos("'>", {0, new_start + block_height, 0, 0})
+  else
+    vim.api.nvim_win_set_cursor(0, {new_start, 0})
+  end
+end
+
+-- Move down
+vim.keymap.set({"n", "v"}, "<C-Down>", function() move_block(1) end, opts)
+vim.keymap.set({"n", "v"}, "<C-j>",   function() move_block(1) end, opts)
+
+-- Move up
+vim.keymap.set({"n", "v"}, "<C-Up>",  function() move_block(-1) end, opts)
+vim.keymap.set({"n", "v"}, "<C-k>",   function() move_block(-1) end, opts)
 
 -------------------------------------------------------------------------------
 --
@@ -268,6 +323,17 @@ require("lazy").setup({
 			-- them less glaring. But alas
 			-- https://github.com/nvim-lua/lsp_extensions.nvim/issues/21
 			-- call Base16hi("CocHintSign", g:base16_gui03, "", g:base16_cterm03, "", "", "")
+		end
+	},
+	-- NERD Commenter
+	{
+		"preservim/nerdcommenter",
+		setup = function ()
+			vim.g.NERDCreateDefaultMappings = 0
+			vim.g.NERDSpaceDelims = 1
+			vim.g.NERDCompactSexyComs = 1
+			vim.g.NERDDefaultAlign = "left"
+			vim.g.NERDAltDelims_c = 1
 		end
 	},
 	-- nice bar at the bottom

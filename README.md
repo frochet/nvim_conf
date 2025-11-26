@@ -1,3 +1,3 @@
-install sto$w package, then run from within:
+install stow package, then run from within:
 
 stow editor

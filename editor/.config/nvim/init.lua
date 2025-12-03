@@ -623,39 +623,68 @@ require("lazy").setup({
 		},
 		config = function()
 			local cmp = require'cmp'
+
 			cmp.setup({
 				snippet = {
-					-- REQUIRED by nvim-cmp. get rid of it once we can
 					expand = function(args)
-						vim.snippet.expand(args.body)
+						vim.snippet.expand(args.body)   -- you already use vim.snippet
 					end,
 				},
+
 				mapping = cmp.mapping.preset.insert({
-					['<C-b>'] = cmp.mapping.scroll_docs(-4),
-					['<C-f>'] = cmp.mapping.scroll_docs(4),
+					['<C-b>']     = cmp.mapping.scroll_docs(-4),
+					['<C-f>']     = cmp.mapping.scroll_docs(4),
+
+					-- Trigger completion manually (optional)
 					['<C-Space>'] = cmp.mapping.complete(),
-					['<C-e>'] = cmp.mapping.abort(),
-					-- Accept currently selected item.
-					-- Set `select` to `false` to only confirm explicitly selected items.
+
+					-- Abort / close the menu
+					['<C-e>']     = cmp.mapping.abort(),
+
+					-- ── NEW: use <Tab>/<S-Tab> for navigation & confirmation ──
+					['<Tab>'] = cmp.mapping(function(fallback)
+						if cmp.visible() then
+							-- If the menu is open, confirm the selected item.
+							-- `select = true` means the first entry is accepted when nothing is highlighted.
+							cmp.confirm({ select = true, behavior = cmp.ConfirmBehavior.Insert })
+						else
+							-- No menu – fall back to normal tab (indent / completion trigger)
+							fallback()
+						end
+					end, { "i", "s" }),
+
+					['<S-Tab>'] = cmp.mapping(function(fallback)
+						if cmp.visible() then
+							cmp.select_prev_item()
+						else
+							fallback()
+						end
+					end, { "i", "s" }),
+
+					-- (Optional) keep <CR> as a secondary confirm if you ever want it
 					['<CR>'] = cmp.mapping.confirm({ select = true, behavior = cmp.ConfirmBehavior.Insert }),
 				}),
+
 				sources = cmp.config.sources({
 					{ name = 'nvim_lsp' },
 				}, {
 					{ name = 'path' },
 				}),
+
 				experimental = {
 					ghost_text = true,
 				},
 			})
 
-			-- Enable completing paths in :
+			------------------------------------------------------------------------
+			-- Cmd‑line completion (unchanged)
+			------------------------------------------------------------------------
 			cmp.setup.cmdline(':', {
 				sources = cmp.config.sources({
 					{ name = 'path' }
 				})
 			})
-		end
+		end,
 	},
 	-- inline function signatures
 	{
@@ -753,12 +782,12 @@ noremap <leader>s :Rg
 let g:fzf_layout = { 'down': '~20%' }
 command! -bang -nargs=* Rg
 \ call fzf#vim#grep(
-\   'rg --column --line-number --no-heading --color=always '.shellescape(<q-args>), 1,
-\   <bang>0 ? fzf#vim#with_preview('up:60%')
-\           : fzf#vim#with_preview('right:50%:hidden', '?'),
-\   <bang>0)
+	\   'rg --column --line-number --no-heading --color=always '.shellescape(<q-args>), 1,
+	\   <bang>0 ? fzf#vim#with_preview('up:60%')
+	\           : fzf#vim#with_preview('right:50%:hidden', '?'),
+	\   <bang>0)
 
-" <leader>q shows stats
-nnoremap <leader>q g<c-g>
+	" <leader>q shows stats
+	nnoremap <leader>q g<c-g>
 
---]]
+	--]]

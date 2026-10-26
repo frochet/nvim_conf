@@ -205,6 +205,18 @@ vim.keymap.set({"n", "v"}, "<C-j>",   function() move_block(1) end, opts)
 vim.keymap.set({"n", "v"}, "<C-Up>",  function() move_block(-1) end, opts)
 vim.keymap.set({"n", "v"}, "<C-k>",   function() move_block(-1) end, opts)
 
+-- Count characters in the next N lines (starting from the current line)
+vim.keymap.set("n", "<leader>n", function()
+  local count = vim.v.count1
+  local start_line = vim.api.nvim_win_get_cursor(0)[1]
+  local lines = vim.api.nvim_buf_get_lines(0, start_line - 1, start_line - 1 + count, false)
+  local total_chars = 0
+  for _, line in ipairs(lines) do
+    total_chars = total_chars + vim.fn.strchars(line)
+  end
+  print(string.format("%d characters in %d line(s)", total_chars, #lines))
+end, { desc = "Count characters in next N lines" })
+
 -------------------------------------------------------------------------------
 --
 -- configuring diagnostics
@@ -379,7 +391,8 @@ require("lazy").setup({
 	},
 	-- quick navigation
 	{
-		'ggandor/leap.nvim',
+		url = "https://codeberg.org/andyg/leap.nvim",
+		name = "leap.nvim",
 		config = function()
 			vim.keymap.set({'n', 'x', 'o'}, 's', '<Plug>(leap)')
 			vim.keymap.set('n',             'S', '<Plug>(leap-from-window)')
@@ -594,16 +607,16 @@ require("lazy").setup({
 					-- https://www.reddit.com/r/neovim/comments/143efmd/is_it_possible_to_disable_treesitter_completely/
 					client.server_capabilities.semanticTokensProvider = nil
 
-					-- format on save for Rust
-					if client.server_capabilities.documentFormattingProvider then
-						vim.api.nvim_create_autocmd("BufWritePre", {
-							group = vim.api.nvim_create_augroup("RustFormat", { clear = true }),
-							buffer = bufnr,
-							callback = function()
-								vim.lsp.buf.format({ bufnr = bufnr })
-							end,
-						})
-					end
+					-- format on save for Rust (disabled)
+					-- if client.server_capabilities.documentFormattingProvider then
+					-- 	vim.api.nvim_create_autocmd("BufWritePre", {
+					-- 		group = vim.api.nvim_create_augroup("RustFormat", { clear = true }),
+					-- 		buffer = bufnr,
+					-- 		callback = function()
+					-- 			vim.lsp.buf.format({ bufnr = bufnr })
+					-- 		end,
+					-- 	})
+					-- end
 				end,
 			})
 		end
